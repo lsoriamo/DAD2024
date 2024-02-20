@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--  -->
+<web-app >
+	<display-name>asd</display-name>
+	<servlet>
+		<servlet-name>ServletSimple</servlet-name>
+		<servlet-class>es.us.lsi.dad.ServletSimple</servlet-class>
+	</servlet>
+	
+	<servlet>
+		<servlet-name>ServletLogin</servlet-name>
+		<servlet-class>es.us.lsi.dad.ServletLogin</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>ServletSimple</servlet-name>
+		<url-pattern>/ServletSimple</url-pattern>
+	</servlet-mapping>
+	
+	<servlet-mapping>
+		<servlet-name>ServletLogin</servlet-name>
+		<url-pattern>/ServletLogin</url-pattern>
+	</servlet-mapping>
+</web-app>
