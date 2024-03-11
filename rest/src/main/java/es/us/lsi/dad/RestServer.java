@@ -33,7 +33,7 @@ public class RestServer extends AbstractVerticle {
 		Router router = Router.router(vertx);
 
 		// Handling any server startup result
-		vertx.createHttpServer().requestHandler(router::handle).listen(8080, result -> {
+		vertx.createHttpServer().requestHandler(router::handle).listen(8084, result -> {
 			if (result.succeeded()) {
 				startFuture.complete();
 			} else {
@@ -45,10 +45,22 @@ public class RestServer extends AbstractVerticle {
 		// handling by /api/users* or /api/users/*
 		router.route("/api/users*").handler(BodyHandler.create());
 		router.get("/api/users").handler(this::getAllWithParams);
+		router.get("/api/users/user/all").handler(this::getAll);
 		router.get("/api/users/:userid").handler(this::getOne);
 		router.post("/api/users").handler(this::addOne);
 		router.delete("/api/users/:userid").handler(this::deleteOne);
 		router.put("/api/users/:userid").handler(this::putOne);
+	}
+
+	@Override
+	public void stop(Promise<Void> stopPromise) throws Exception {
+		try {
+			users.clear();
+			stopPromise.complete();
+		} catch (Exception e) {
+			stopPromise.fail(e);
+		}
+		super.stop(stopPromise);
 	}
 
 	@SuppressWarnings("unused")
@@ -58,27 +70,39 @@ public class RestServer extends AbstractVerticle {
 	}
 
 	private void getAllWithParams(RoutingContext routingContext) {
-		final String name = routingContext.queryParams().contains("name") ? routingContext.queryParam("name").get(0) : null;
-		final String surname = routingContext.queryParams().contains("surname") ? routingContext.queryParam("surname").get(0) : null;
-		final String username = routingContext.queryParams().contains("username") ? routingContext.queryParam("username").get(0) : null;
-		
+		final String name = routingContext.queryParams().contains("name") ? routingContext.queryParam("name").get(0)
+				: null;
+		final String surname = routingContext.queryParams().contains("surname")
+				? routingContext.queryParam("surname").get(0)
+				: null;
+		final String username = routingContext.queryParams().contains("username")
+				? routingContext.queryParam("username").get(0)
+				: null;
+
 		routingContext.response().putHeader("content-type", "application/json; charset=utf-8").setStatusCode(200)
 				.end(gson.toJson(new UserEntityListWrapper(users.values().stream().filter(elem -> {
 					boolean res = true;
-					res = res && name != null ? elem.getName().equals(name) : true;
-					res = res && surname != null ? elem.getSurname().equals(surname) : true;
-					res = res && username != null ? elem.getUsername().equals(username) : true;
+					res = res && (name != null ? elem.getName().equals(name) : true);
+					res = res && (surname != null ? elem.getSurname().equals(surname) : true);
+					res = res && (username != null ? elem.getUsername().equals(username) : true);
 					return res;
 				}).collect(Collectors.toList()))));
 	}
 
 	private void getOne(RoutingContext routingContext) {
-		int id = Integer.parseInt(routingContext.request().getParam("userid"));
-		if (users.containsKey(id)) {
-			UserEntity ds = users.get(id);
-			routingContext.response().putHeader("content-type", "application/json; charset=utf-8").setStatusCode(200)
-					.end(gson.toJson(ds));
-		} else {
+		int id = 0;
+		try {
+			id = Integer.parseInt(routingContext.request().getParam("userid"));
+
+			if (users.containsKey(id)) {
+				UserEntity ds = users.get(id);
+				routingContext.response().putHeader("content-type", "application/json; charset=utf-8")
+						.setStatusCode(200).end(ds != null ? gson.toJson(ds) : "");
+			} else {
+				routingContext.response().putHeader("content-type", "application/json; charset=utf-8")
+						.setStatusCode(204).end();
+			}
+		} catch (Exception e) {
 			routingContext.response().putHeader("content-type", "application/json; charset=utf-8").setStatusCode(204)
 					.end();
 		}
